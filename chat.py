@@ -5,7 +5,7 @@ import os
 import requests
 
 # Streamlit app title
-st.title("3-Agent LLM Discussion with Contextual Memory and Dynamic Interaction: GPT-3.5, LLAMA-3 & GPT-4o")
+st.title("3-Agent LLM Discussion with Contextual Memory: GPT-3.5, LLAMA-3 & GPT-4o")
 
 # Exciting topic suggestions
 suggested_topics = [
