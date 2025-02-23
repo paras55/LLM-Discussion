@@ -14,6 +14,11 @@ suggested_topics = [
     "Future of Quantum Computing",
     "Space Colonization: Mars vs. Moon",
     "Cryptocurrency Regulation Challenges",
+    "Rise of Generative AI in Education",
+    "Deepfake Technology: Threat or Tool?",
+    "Impact of Social Media on Mental Health",
+    "Climate Change Solutions: Tech Innovations",
+    "Virtual Reality: Future of Remote Work"
 ]
 
 # Step 1: Enter the topic first
