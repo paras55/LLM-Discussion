@@ -11,14 +11,15 @@ st.title("3-Agent LLM Discussion with Contextual Memory and Dynamic Interaction"
 st.sidebar.header("Settings")
 openai_api_key = st.sidebar.text_input("OpenAI API Key", type="password", value=os.getenv("OPENAI_API_KEY", ""))
 groq_api_key = st.sidebar.text_input("Groq API Key", type="password", value=os.getenv("GROQ_API_KEY", ""))
+serpapi_key = st.sidebar.text_input("SerpAPI Key", type="password", value=os.getenv("SERPAPI_KEY", ""))
 turns = st.sidebar.slider("Number of Turns", min_value=1, max_value=10, value=3)
 
 # Initialize API clients
-if openai_api_key and groq_api_key:
+if openai_api_key and groq_api_key and serpapi_key:
     openai_client = OpenAI(api_key=openai_api_key)
     groq_client = Groq(api_key=groq_api_key)
 else:
-    st.error("Please provide both OpenAI and Groq API keys in the sidebar.")
+    st.error("Please provide OpenAI, Groq, and SerpAPI keys in the sidebar.")
     st.stop()
 
 # Define agents
@@ -29,18 +30,17 @@ agents = [
 ]
 
 def web_search(query):
-    """Improved web search using SerpAPI."""
+    """Improved web search using SerpAPI with sidebar parameter."""
     try:
-        api_key = os.getenv("SERPAPI_KEY", "")  # Store this key as an environment variable
-        if not api_key:
-            return "Search failed: SERPAPI_KEY not provided."
+        if not serpapi_key:
+            return "Search failed: SerpAPI key not provided."
 
         # SerpAPI endpoint
         url = "https://serpapi.com/search.json"
         params = {
             "engine": "google",
             "q": query,
-            "api_key": api_key
+            "api_key": serpapi_key
         }
 
         # Make the request
