@@ -3,10 +3,9 @@ from openai import OpenAI
 from groq import Groq
 import os
 import requests
-from bs4 import BeautifulSoup
 
 # Streamlit app title
-st.title("3-Agent LLM Discussion")
+st.title("3-Agent LLM Discussion with Contextual Memory and Dynamic Interaction")
 
 # Sidebar for API keys and settings
 st.sidebar.header("Settings")
@@ -30,24 +29,52 @@ agents = [
 ]
 
 def web_search(query):
-    """Simple web search to fetch brief info (simulated internet access)."""
+    """Improved web search using SerpAPI."""
     try:
-        url = f"https://www.google.com/search?q={query}"
-        headers = {"User-Agent": "Mozilla/5.0"}
-        response = requests.get(url, headers=headers)
-        soup = BeautifulSoup(response.text, "html.parser")
-        snippets = soup.find_all("div", class_="BNeawe s3v9rd AP7Wnd")
-        return " ".join([snippet.get_text() for snippet in snippets[:2]])[:200]  # Limit to 200 chars
+        api_key = os.getenv("SERPAPI_KEY", "")  # Store this key as an environment variable
+        if not api_key:
+            return "Search failed: SERPAPI_KEY not provided."
+
+        # SerpAPI endpoint
+        url = "https://serpapi.com/search.json"
+        params = {
+            "engine": "google",
+            "q": query,
+            "api_key": api_key
+        }
+
+        # Make the request
+        response = requests.get(url, params=params)
+        data = response.json()
+
+        # Parse the response
+        if "organic_results" in data:
+            results = data["organic_results"]
+            search_summary = ""
+            for result in results[:2]:  # Get the top 2 results
+                title = result.get("title", "No title")
+                link = result.get("link", "No link")
+                snippet = result.get("snippet", "No description")
+                search_summary += f"**[{title}]({link})**\n{snippet}\n\n"
+
+            return search_summary or "No relevant search results found."
+        else:
+            return "No search results found."
+
     except Exception as e:
         return f"Search failed: {str(e)}"
 
 def get_response(agent, chat_history, topic):
-    """Generate a response with optional web search capability."""
+    """Generate a response with enhanced contextual memory and dynamic interaction."""
     system_prompt = (
-        f"You are {agent['name']}, an AI in a group discussion. "
+        f"You are {agent['name']}, an AI participating in a group discussion. "
+        f"Your role is to actively engage in the conversation, build on previous arguments, ask questions, "
+        f"and challenge or support other agents' points of view. "
+        f"Maintain the context and keep the discussion cohesive. "
         f"Topic: '{topic}'. Chat history:\n\n{chat_history}\n\n"
-        f"Contribute concisely (2-3 sentences). You can start your message with 'SEARCH: <query>' "
-        f"to fetch web info (e.g., 'SEARCH: latest Mars colonization plans')."
+        f"Respond concisely (2-3 sentences) and contribute to the flow of discussion. "
+        f"You can also ask relevant questions to other agents or propose alternative perspectives. "
+        f"To fetch web info, start your message with 'SEARCH: <query>' (e.g., 'SEARCH: Nvidia AI market share')."
     )
 
     try:
@@ -58,7 +85,7 @@ def get_response(agent, chat_history, topic):
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": "What do you think?"}
                 ],
-                max_tokens=100,
+                max_tokens=150,
                 temperature=0.7
             )
             text = response.choices[0].message.content.strip()
@@ -69,7 +96,7 @@ def get_response(agent, chat_history, topic):
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": "What do you think?"}
                 ],
-                max_tokens=100,
+                max_tokens=150,
                 temperature=0.7
             )
             text = response.choices[0].message.content.strip()
@@ -84,7 +111,7 @@ def get_response(agent, chat_history, topic):
         return f"Error: {str(e)}"
 
 # Main app logic
-st.header("Start a Discussion")
+st.header("Start a Contextual Discussion")
 topic = st.text_input("Enter a topic for the agents to discuss:")
 
 if st.button("Start Discussion"):
@@ -116,7 +143,7 @@ if st.button("Start Discussion"):
 # Instructions
 st.sidebar.markdown("""
 ### How to Use
-1. Enter your OpenAI and Groq API keys.
+1. Enter your OpenAI, Groq, and SerpAPI keys.
 2. Set the number of turns.
 3. Input a topic and click "Start Discussion".
 4. Expand each turn to see the agents' responses!
