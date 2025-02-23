@@ -7,13 +7,46 @@ import requests
 # Streamlit app title
 st.title("3-Agent LLM Discussion with Contextual Memory and Dynamic Interaction")
 
+# Exciting topic suggestions
+suggested_topics = [
+    "AI's Impact on Creative Industries",
+    "Ethics of Autonomous Vehicles",
+    "Future of Quantum Computing",
+    "Space Colonization: Mars vs. Moon",
+    "Cryptocurrency Regulation Challenges",
+]
+
 # Step 1: Enter the topic first
 st.subheader("Step 1: Enter Discussion Topic")
-topic = st.text_input("Enter a topic for the agents to discuss:")
+
+# Initialize session state for topic
+if "topic" not in st.session_state:
+    st.session_state.topic = ""
+
+# Input field for topic
+topic_input = st.text_input("Enter a topic for the agents to discuss:", value=st.session_state.topic)
+
+# Display exciting topic suggestions
+if not topic_input:
+    st.markdown("**TRY:** " + ", ".join([f"`{t}`" for t in suggested_topics]))
+
+# Allow user to click on suggestions to auto-fill the topic
+if not topic_input:
+    selected_topic = st.selectbox("Or select from popular topics:", [""] + suggested_topics)
+    if selected_topic:
+        st.session_state.topic = selected_topic  # Store in session state
+        topic_input = selected_topic  # Auto-fill the text input
+
+# Update session state with the entered topic
+if topic_input:
+    st.session_state.topic = topic_input
+    topic = topic_input  # Use this as the topic variable
+else:
+    topic = None
 
 # Proceed only if a topic is entered
 if topic:
-    st.success("Topic entered. Now configure your settings.")
+    st.success(f"Topic selected: {topic}. Now configure your settings.")
     
     # Step 2: Sidebar for API keys and settings
     st.sidebar.header("Step 2: Settings")
@@ -97,7 +130,7 @@ if topic:
                     temperature=0.7
                 )
                 text = response.choices[0].message.content.strip()
-            else:  # Groq client
+            else:
                 response = agent["client"].chat.completions.create(
                     model=agent["model"],
                     messages=[
@@ -122,14 +155,12 @@ if topic:
     st.subheader("Step 3: Start Discussion")
 
     if st.button("Start Discussion"):
-        # Initialize chat history
         chat_history = f"Discussion Topic: {topic}\n\n"
         st.subheader("Discussion")
         st.write(f"**Topic**: {topic}")
 
-        # Run discussion with expandable sections per turn
         for turn in range(turns):
-            with st.expander(f"Turn {turn + 1}", expanded=(turn == 0)):  # Expand first turn by default
+            with st.expander(f"Turn {turn + 1}", expanded=(turn == 0)):
                 turn_history = ""
                 for agent in agents:
                     with st.spinner(f"{agent['name']} is thinking..."):
@@ -137,19 +168,5 @@ if topic:
                         turn_history += f"**{agent['name']}**: {response}\n\n"
                         chat_history += f"{agent['name']}: {response}\n"
                     st.markdown(f"**{agent['name']}**: {response}")
-                # Store turn history in session state for reference (optional)
-                if "turn_history" not in st.session_state:
-                    st.session_state.turn_history = {}
-                st.session_state.turn_history[turn] = turn_history
 
         st.success("Discussion concluded!")
-
-# Instructions
-st.sidebar.markdown("""
-### How to Use
-1. **Step 1**: Enter the topic for discussion.
-2. **Step 2**: Enter your OpenAI, Groq, and SerpAPI keys.
-3. **Step 3**: Click "Start Discussion" to begin.
-4. **Expand each turn** to see the agents' contextual responses.
-5. Agents can use 'SEARCH: <query>' to fetch web info.
-""")
